@@ -3,75 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SOET KENYA | Dynamic Bot Platform</title>
+  <title>SOET KENYA | Deriv Bot Terminal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
     .mono { font-family: 'JetBrains Mono', monospace; }
-    
-    /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: #050811; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 999px; }
-
-    /* Flashing Animations for Live Ticks */
-    @keyframes flashUp { 0% { background-color: rgba(16, 185, 129, 0.3); } 100% { background-color: transparent; } }
-    @keyframes flashDown { 0% { background-color: rgba(244, 63, 94, 0.3); } 100% { background-color: transparent; } }
-    .tick-up { animation: flashUp 0.6s ease-out; }
-    .tick-down { animation: flashDown 0.6s ease-out; }
   </style>
 </head>
 <body class="h-full text-slate-200 flex flex-col overflow-x-hidden">
 
-  <!-- SMOOTH ENTRY SPLASH SCREEN -->
-  <div id="splashLoader" class="fixed inset-0 z-50 bg-[#050811] flex flex-col items-center justify-center transition-opacity duration-700">
-    <div class="relative flex items-center justify-center">
-      <div class="w-20 h-20 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
-      <span class="absolute font-black text-xs tracking-wider text-emerald-400">SOET</span>
-    </div>
-    <p class="mt-4 text-xs font-mono text-slate-400 animate-pulse">Establishing Deriv Telemetry Stream...</p>
-  </div>
-
-  <!-- MAIN NAVIGATION -->
-  <header class="bg-[#0b0f19]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 px-6 py-3">
+  <!-- TOP HEADER -->
+  <header class="bg-[#0b0f19] border-b border-slate-800/80 px-6 py-3.5 sticky top-0 z-40">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
       
-      <!-- BRAND & STATUS -->
+      <!-- BRAND & NETWORK STATUS -->
       <div class="flex items-center space-x-3">
         <div class="relative flex h-3 w-3">
-          <span id="statusPulse" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span id="statusDot" class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          <span id="statusPulse" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+          <span id="statusDot" class="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
         </div>
         <div>
           <h1 class="text-base font-extrabold tracking-wider bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">SOET KENYA</h1>
-          <p class="text-[10px] text-slate-400 font-mono leading-none">Automated Trading Suite</p>
+          <p id="connectionStateText" class="text-[10px] text-rose-400 font-mono leading-none">Connecting to Deriv WS...</p>
         </div>
       </div>
 
-      <!-- NAVIGATION TABS -->
+      <!-- TABS -->
       <nav class="flex items-center space-x-1 bg-[#050811] p-1 rounded-xl border border-slate-800/80 text-xs font-semibold">
         <button onclick="switchTab('analytics')" id="tab-analytics" class="px-4 py-2 rounded-lg text-emerald-400 bg-emerald-500/10 transition">Digit Intelligence</button>
         <button onclick="switchTab('bot')" id="tab-bot" class="px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition">Bot Studio</button>
-        <button onclick="switchTab('journal')" id="tab-journal" class="px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition">Executions</button>
       </nav>
 
-      <!-- ACCOUNT CONTROLS -->
+      <!-- ACCOUNT SUMMARY & AUTH BUTTON -->
       <div class="flex items-center space-x-3 text-xs">
         <div id="accountBox" class="hidden font-mono text-right">
           <div id="accountBalance" class="text-emerald-400 font-bold">$0.00</div>
-          <div id="accountEmail" class="text-[10px] text-slate-500">Connected</div>
+          <div id="accountEmail" class="text-[10px] text-slate-400">Connected</div>
         </div>
-        <button id="loginBtn" onclick="openAuthModal()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-2 px-4 rounded-xl shadow-lg shadow-emerald-900/20 transition">Connect Deriv</button>
+        <button id="loginBtn" onclick="openAuthModal()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-2 px-4 rounded-xl shadow-lg shadow-emerald-900/20 transition">Connect Account</button>
+        <button id="logoutBtn" onclick="disconnectAccount()" class="hidden bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 font-bold py-2 px-3 rounded-xl border border-rose-500/30 transition">Disconnect</button>
       </div>
 
     </div>
   </header>
 
-  <!-- LIVE MARKET STATS BAR -->
-  <section id="tickerBar" class="bg-[#080d1a] border-b border-slate-800/60 px-6 py-2.5 transition-colors duration-300">
+  <!-- LIVE TICKER BANNER -->
+  <section class="bg-[#080d1a] border-b border-slate-800/60 px-6 py-2.5">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 font-mono text-xs">
-      
       <div class="flex items-center space-x-3">
         <span class="text-slate-500 text-[11px] font-sans font-bold">MARKET:</span>
         <select id="marketSelect" onchange="changeMarket(this.value)" class="bg-[#0e1626] border border-slate-700 text-emerald-400 font-bold rounded-lg px-3 py-1 outline-none">
@@ -87,45 +69,38 @@
 
       <div class="flex items-center space-x-6">
         <div>
-          <span class="text-slate-500 text-[10px]">SPOT PRICE</span>
+          <span class="text-slate-500 text-[10px]">LIVE TICK</span>
           <div id="livePrice" class="text-base font-bold text-slate-100">0.0000</div>
         </div>
-        <div>
-          <span class="text-slate-500 text-[10px]">24H CHANGE</span>
-          <div id="priceChange" class="text-xs font-bold text-emerald-400">+0.00%</div>
-        </div>
       </div>
 
-      <!-- LAST TICK DISPLAY -->
       <div class="flex items-center space-x-2">
         <span class="text-slate-500 text-[10px]">LAST DIGIT:</span>
-        <div id="lastDigitBadge" class="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center font-bold text-sm text-emerald-400 shadow-md transition-all">0</div>
+        <div id="lastDigitBadge" class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-sm text-slate-300">0</div>
       </div>
-
     </div>
   </section>
 
-  <!-- CONTENT VIEWS -->
+  <!-- ERROR / NOTIFICATION POPUP -->
+  <div id="toastNotification" class="hidden fixed top-20 right-6 z-50 bg-rose-500/20 border border-rose-500 text-rose-300 px-4 py-3 rounded-xl text-xs font-mono shadow-2xl backdrop-blur-md">
+    <span id="toastMessage">Error connecting to Deriv.</span>
+  </div>
+
+  <!-- MAIN VIEWS -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-6">
 
     <!-- VIEW 1: CIRCULAR DIGIT ANALYSIS -->
     <section id="view-analytics" class="space-y-6">
       <div class="flex justify-between items-end border-b border-slate-800 pb-4">
         <div>
-          <h2 class="text-xl font-bold text-slate-100">Digit Telemetry</h2>
-          <p class="text-xs text-slate-400">Live frequency distribution across 1,000 tick samples</p>
-        </div>
-        <div class="font-mono text-xs text-slate-400">
-          Samples: <span id="sampleCount" class="text-emerald-400 font-bold">1000</span>
+          <h2 class="text-xl font-bold text-slate-100">Digit Analysis</h2>
+          <p class="text-xs text-slate-400">Live frequency across 1,000 Deriv historical ticks</p>
         </div>
       </div>
 
-      <!-- 0-9 CIRCULAR METRIC CARDS -->
-      <div class="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-4" id="digitCirclesContainer">
-        <!-- Rendered Dynamically -->
-      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-4" id="digitCirclesContainer"></div>
 
-      <!-- EVEN vs ODD PARITY METER -->
+      <!-- PARITY BAR -->
       <div class="bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-6 space-y-4 shadow-xl">
         <div class="flex justify-between items-center font-mono text-xs">
           <span class="text-emerald-400 font-bold">EVEN: <span id="evenPct">50.0%</span></span>
@@ -139,105 +114,60 @@
       </div>
     </section>
 
-    <!-- VIEW 2: BOT BUILDER & EXECUTION -->
+    <!-- VIEW 2: BOT STUDIO -->
     <section id="view-bot" class="hidden space-y-6">
       <div class="border-b border-slate-800 pb-4">
-        <h2 class="text-xl font-bold text-slate-100">Execution Parameters</h2>
-        <p class="text-xs text-slate-400">Configure bot logic, risk variables, and entry thresholds</p>
+        <h2 class="text-xl font-bold text-slate-100">Execution Controls</h2>
+        <p class="text-xs text-slate-400">Set trading rules and automated execution parameters</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <!-- PARAMETER INPUT MATRIX -->
         <div class="lg:col-span-2 bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-6 space-y-6 shadow-xl">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-mono">
-            
             <div class="space-y-2">
-              <label class="text-slate-400 font-sans font-semibold">Initial Stake ($)</label>
-              <input type="number" id="botStake" value="1.00" step="0.5" class="w-full bg-[#050811] border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-slate-100 outline-none transition">
+              <label class="text-slate-400 font-sans font-semibold">Stake Amount ($)</label>
+              <input type="number" id="botStake" value="1.00" step="0.5" class="w-full bg-[#050811] border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-slate-100 outline-none">
             </div>
-
             <div class="space-y-2">
-              <label class="text-slate-400 font-sans font-semibold">Target Barrier / Digit</label>
-              <input type="number" id="botBarrier" value="5" min="0" max="9" class="w-full bg-[#050811] border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-slate-100 outline-none transition">
+              <label class="text-slate-400 font-sans font-semibold">Prediction Barrier (0-9)</label>
+              <input type="number" id="botBarrier" value="5" min="0" max="9" class="w-full bg-[#050811] border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-slate-100 outline-none">
             </div>
-
-            <div class="space-y-2">
-              <label class="text-slate-400 font-sans font-semibold">Martingale Multiplier</label>
-              <input type="number" id="botMultiplier" value="2.1" step="0.1" class="w-full bg-[#050811] border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-slate-100 outline-none transition">
-            </div>
-
-            <div class="space-y-2">
-              <label class="text-slate-400 font-sans font-semibold">Max Continuous Losses</label>
-              <input type="number" id="botMaxLoss" value="4" class="w-full bg-[#050811] border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-slate-100 outline-none transition">
-            </div>
-
-          </div>
-
-          <div class="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl text-xs text-emerald-400 flex items-center space-x-3">
-            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></div>
-            <span>Auto-execution uses active WebSocket tokens to submit trades instantly when market conditions match parameters.</span>
           </div>
         </div>
 
-        <!-- BOT CONTROLLER CARD -->
         <div class="bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between shadow-xl space-y-6">
           <div>
-            <span class="text-xs text-slate-500 uppercase tracking-widest font-mono font-bold">Engine Status</span>
+            <span class="text-xs text-slate-500 uppercase tracking-widest font-mono font-bold">Execution Engine</span>
             <div id="botStateBadge" class="mt-2 p-3 rounded-xl bg-slate-900 border border-slate-800 text-center font-mono font-bold text-slate-400 text-sm">
               ENGINE READY
             </div>
           </div>
-
-          <div class="space-y-3 font-mono text-xs border-t border-b border-slate-800 py-4">
-            <div class="flex justify-between"><span class="text-slate-500">Total Trades:</span><span id="statTrades" class="font-bold text-slate-200">0</span></div>
-            <div class="flex justify-between"><span class="text-slate-500">Wins / Losses:</span><span id="statWinLoss" class="font-bold text-slate-200">0 / 0</span></div>
-            <div class="flex justify-between"><span class="text-slate-500">Net Profit:</span><span id="statProfit" class="font-bold text-emerald-400">$0.00</span></div>
-          </div>
-
-          <button id="runBotBtn" onclick="toggleBot()" class="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all active:scale-95">
-            Start Strategy
+          <button id="runBotBtn" onclick="toggleBot()" class="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm uppercase tracking-wider transition-all">
+            Start Bot
           </button>
         </div>
-
-      </div>
-    </section>
-
-    <!-- VIEW 3: JOURNAL -->
-    <section id="view-journal" class="hidden space-y-6">
-      <div class="border-b border-slate-800 pb-4">
-        <h2 class="text-xl font-bold text-slate-100">Live Execution Journal</h2>
-        <p class="text-xs text-slate-400">Real-time trade telemetry and contract settlements</p>
-      </div>
-
-      <div class="bg-[#0b0f19] border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
-        <table class="w-full text-left font-mono text-xs">
-          <thead class="bg-[#050811] text-slate-400 border-b border-slate-800">
-            <tr>
-              <th class="p-4">Reference ID</th>
-              <th class="p-4">Type</th>
-              <th class="p-4">Stake</th>
-              <th class="p-4">Outcome</th>
-            </tr>
-          </thead>
-          <tbody id="journalBody" class="divide-y divide-slate-800/60 text-slate-300">
-            <tr><td colspan="4" class="p-6 text-center text-slate-500">No active positions executed in this session.</td></tr>
-          </tbody>
-        </table>
       </div>
     </section>
 
   </main>
 
-  <!-- AUTH MODAL -->
+  <!-- AUTHENTICATION MODAL -->
   <div id="authModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-[#0b0f19] border border-slate-800 w-full max-w-sm rounded-2xl p-6 space-y-5 relative shadow-2xl">
       <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">✕</button>
-      <h3 class="text-lg font-bold text-slate-100 text-center">Deriv Connection</h3>
-      <button onclick="redirectToOAuth()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl text-xs transition">Connect via Deriv OAuth</button>
-      <div class="space-y-2">
-        <input type="text" id="manualToken" placeholder="Or paste API Token here" class="w-full bg-[#050811] border border-slate-700 p-3 rounded-xl text-xs text-slate-200 font-mono outline-none">
-        <button onclick="submitManualToken()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl text-xs transition">Submit Token</button>
+      <h3 class="text-lg font-bold text-slate-100 text-center">Connect Deriv Account</h3>
+      
+      <button onclick="redirectToOAuth()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl text-xs transition">Log In via Deriv OAuth</button>
+      
+      <div class="relative flex py-1 items-center">
+        <div class="flex-grow border-t border-slate-800"></div>
+        <span class="flex-shrink mx-3 text-slate-500 text-[10px]">OR API TOKEN</span>
+        <div class="flex-grow border-t border-slate-800"></div>
+      </div>
+
+      <div class="space-y-3">
+        <input type="password" id="manualToken" placeholder="Paste your Deriv API Token" class="w-full bg-[#050811] border border-slate-700 p-3 rounded-xl text-xs text-slate-200 font-mono outline-none focus:border-emerald-500">
+        <button onclick="submitManualToken()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl text-xs transition">Authenticate Token</button>
       </div>
     </div>
   </div>
@@ -247,14 +177,13 @@
     let ws = null;
     let token = localStorage.getItem('deriv_token') || null;
     let currentMarket = "1HZ15V";
-    let priceHistory = [];
     let digitHistory = [];
     let botRunning = false;
 
     window.addEventListener('DOMContentLoaded', () => {
       renderDigitCircles();
       parseOAuthToken();
-      connectWebSocket();
+      initWebSocket();
     });
 
     function parseOAuthToken() {
@@ -268,7 +197,7 @@
     }
 
     function switchTab(tab) {
-      ['analytics', 'bot', 'journal'].forEach(t => {
+      ['analytics', 'bot'].forEach(t => {
         document.getElementById(`view-${t}`).classList.add('hidden');
         document.getElementById(`tab-${t}`).classList.remove('text-emerald-400', 'bg-emerald-500/10');
         document.getElementById(`tab-${t}`).classList.add('text-slate-400');
@@ -282,7 +211,7 @@
       container.innerHTML = '';
       for (let i = 0; i <= 9; i++) {
         container.innerHTML += `
-          <div id="digitCard-${i}" class="bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-3 flex flex-col items-center justify-center space-y-2 transition-all duration-300">
+          <div class="bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-3 flex flex-col items-center justify-center space-y-2">
             <div id="digitRing-${i}" class="w-12 h-12 rounded-full border-2 border-slate-800 flex items-center justify-center font-bold font-mono text-sm text-slate-300 transition-all">
               ${i}
             </div>
@@ -292,64 +221,92 @@
       }
     }
 
-    function connectWebSocket() {
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastMessage').innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 5000);
+    }
+
+    function initWebSocket() {
+      // Connect directly to Deriv's global WebSocket server
       ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${APP_ID}`);
 
       ws.onopen = () => {
-        // Hide Splash Screen
-        document.getElementById('splashLoader').classList.add('opacity-0', 'pointer-events-none');
+        // Update connection UI status
+        document.getElementById('statusPulse').className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
+        document.getElementById('statusDot').className = "relative inline-flex rounded-full h-3 w-3 bg-emerald-500";
+        document.getElementById('connectionStateText').innerText = "Telemetry Connected";
+        document.getElementById('connectionStateText').className = "text-[10px] text-emerald-400 font-mono leading-none";
+
+        // Subscribe to live market ticks immediately
         subscribeMarket(currentMarket);
-        if (token) ws.send(JSON.stringify({ authorize: token }));
+
+        // Authenticate token if present
+        if (token) {
+          ws.send(JSON.stringify({ authorize: token }));
+        }
       };
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
 
-        if (data.msg_type === 'authorize' && !data.error) {
+        // HANDLE API ERRORS DIRECTLY FROM DERIV
+        if (data.error) {
+          showToast(data.error.message || "Deriv API Error");
+          if (data.error.code === 'InvalidToken') {
+            disconnectAccount();
+          }
+          return;
+        }
+
+        // HANDLE AUTHORIZATION RESPONSE
+        if (data.msg_type === 'authorize') {
           document.getElementById('loginBtn').classList.add('hidden');
+          document.getElementById('logoutBtn').classList.remove('hidden');
           document.getElementById('accountBox').classList.remove('hidden');
           document.getElementById('accountEmail').innerText = data.authorize.email;
           document.getElementById('accountBalance').innerText = `$${parseFloat(data.authorize.balance).toFixed(2)}`;
+          showToast(`Successfully connected: ${data.authorize.email}`);
         }
 
+        // HANDLE TICK HISTORY
         if (data.msg_type === 'history') {
-          priceHistory = data.history.prices;
-          digitHistory = priceHistory.map(p => parseInt(p.toFixed(data.history.pip_size).slice(-1)));
+          const prices = data.history.prices;
+          digitHistory = prices.map(p => parseInt(p.toFixed(data.history.pip_size).slice(-1)));
           updateDigitStats();
         }
 
+        // HANDLE LIVE TICK STREAM
         if (data.msg_type === 'tick') {
           const tick = data.tick;
           const quoteStr = tick.quote.toFixed(tick.pip_size);
           const digit = parseInt(quoteStr.slice(-1));
-          
-          // Flash animation on Price change
-          const priceEl = document.getElementById('livePrice');
-          const prevPrice = parseFloat(priceEl.innerText) || 0;
-          priceEl.innerText = quoteStr;
-          
-          const tickerBar = document.getElementById('tickerBar');
-          tickerBar.classList.remove('tick-up', 'tick-down');
-          void tickerBar.offsetWidth; // Trigger reflow
-          tickerBar.classList.add(tick.quote >= prevPrice ? 'tick-up' : 'tick-down');
 
-          // Highlight Last Digit Badge
+          document.getElementById('livePrice').innerText = quoteStr;
+          
           const badge = document.getElementById('lastDigitBadge');
           badge.innerText = digit;
-          badge.className = `w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-md transition-all ${digit % 2 === 0 ? 'bg-emerald-500/20 border border-emerald-500 text-emerald-400' : 'bg-rose-500/20 border border-rose-500 text-rose-400'}`;
+          badge.className = `w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all ${digit % 2 === 0 ? 'bg-emerald-500/20 border border-emerald-500 text-emerald-400' : 'bg-rose-500/20 border border-rose-500 text-rose-400'}`;
 
-          priceHistory.push(tick.quote);
           digitHistory.push(digit);
-          if (priceHistory.length > 1000) {
-            priceHistory.shift();
-            digitHistory.shift();
-          }
+          if (digitHistory.length > 1000) digitHistory.shift();
 
           updateDigitStats(digit);
         }
       };
 
-      ws.onclose = () => setTimeout(connectWebSocket, 3000);
+      ws.onerror = () => {
+        showToast("WebSocket Connection Failed. Reconnecting...");
+      };
+
+      ws.onclose = () => {
+        document.getElementById('statusPulse').className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75";
+        document.getElementById('statusDot').className = "relative inline-flex rounded-full h-3 w-3 bg-rose-500";
+        document.getElementById('connectionStateText').innerText = "Disconnected";
+        document.getElementById('connectionStateText').className = "text-[10px] text-rose-400 font-mono leading-none";
+        setTimeout(initWebSocket, 3000);
+      };
     }
 
     function subscribeMarket(market) {
@@ -413,27 +370,48 @@
 
     function submitManualToken() {
       const val = document.getElementById('manualToken').value.trim();
-      if (val) {
-        token = val;
-        localStorage.setItem('deriv_token', token);
+      if (!val) {
+        showToast("Please enter a valid API token");
+        return;
+      }
+      token = val;
+      localStorage.setItem('deriv_token', token);
+      
+      if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ authorize: token }));
         closeAuthModal();
+      } else {
+        showToast("WebSocket not connected yet. Retrying...");
       }
     }
 
+    function disconnectAccount() {
+      localStorage.removeItem('deriv_token');
+      token = null;
+      document.getElementById('loginBtn').classList.remove('hidden');
+      document.getElementById('logoutBtn').classList.add('hidden');
+      document.getElementById('accountBox').classList.add('hidden');
+      showToast("Disconnected from Deriv");
+    }
+
     function toggleBot() {
+      if (!token) {
+        openAuthModal();
+        showToast("Connect your Deriv account first to run bots");
+        return;
+      }
       botRunning = !botRunning;
       const btn = document.getElementById('runBotBtn');
       const badge = document.getElementById('botStateBadge');
       
       if (botRunning) {
-        btn.innerText = "Stop Strategy";
-        btn.className = "w-full py-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-sm uppercase tracking-wider shadow-lg transition-all active:scale-95";
-        badge.innerText = "EXECUTING LOGIC";
+        btn.innerText = "Stop Bot";
+        btn.className = "w-full py-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-sm uppercase tracking-wider transition-all";
+        badge.innerText = "RUNNING";
         badge.className = "mt-2 p-3 rounded-xl bg-emerald-500/20 border border-emerald-500 text-center font-mono font-bold text-emerald-400 text-sm animate-pulse";
       } else {
-        btn.innerText = "Start Strategy";
-        btn.className = "w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm uppercase tracking-wider shadow-lg transition-all active:scale-95";
+        btn.innerText = "Start Bot";
+        btn.className = "w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm uppercase tracking-wider transition-all";
         badge.innerText = "ENGINE READY";
         badge.className = "mt-2 p-3 rounded-xl bg-slate-900 border border-slate-800 text-center font-mono font-bold text-slate-400 text-sm";
       }
