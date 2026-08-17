@@ -168,13 +168,13 @@
       }
     });
 
-    // Redirect user to official Deriv OAuth page
+  // Redirect user to official Deriv OAuth page
     function loginWithDeriv() {
       const redirectUri = window.location.origin + window.location.pathname;
-      const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=${APP_ID}&l=EN&cb=${encodeURIComponent(redirectUri)}`;
+      const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=${APP_ID}&l=EN&brand=deriv&cb=${encodeURIComponent(redirectUri)}`;
       window.location.href = oauthUrl;
     }
-
+    
     function logout() {
       localStorage.removeItem('deriv_token');
       localStorage.removeItem('deriv_account');
