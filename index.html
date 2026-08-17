@@ -14,29 +14,46 @@
 </head>
 <body class="bg-[#060911] text-slate-100 font-sans min-h-screen flex flex-col">
 
-  <!-- TOP HEADER & ACCOUNT SUITE -->
+  <!-- TOP HEADER & AUTHENTICATION SUITE -->
   <header class="bg-[#0b101d] border-b border-slate-800/80 px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
     <div class="flex items-center space-x-3">
       <div id="statusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
       <h1 class="text-lg font-bold tracking-wider text-emerald-400">SOET KENYA <span class="text-slate-400 text-xs font-normal">| Trading Suite</span></h1>
     </div>
 
-    <!-- MAIN NAVIGATION TABS (OSAM STYLE) -->
+    <!-- MAIN NAVIGATION TABS -->
     <nav class="flex space-x-6 text-xs text-slate-400 font-medium">
       <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-active py-2 transition">Dashboard</button>
       <button onclick="switchTab('bots')" id="tab-bots" class="py-2 transition">Trading Bots</button>
       <button onclick="switchTab('builder')" id="tab-builder" class="py-2 transition">Bot Builder</button>
       <button onclick="switchTab('digits')" id="tab-digits" class="py-2 transition">Digit Analysis</button>
+      <button onclick="switchTab('analytics')" id="tab-analytics" class="py-2 transition">Market Intelligence</button>
       <button onclick="switchTab('journal')" id="tab-journal" class="py-2 transition">Transactions</button>
     </nav>
 
-    <!-- ACCOUNT AUTH -->
+    <!-- ACCOUNT STATUS, CURRENCY & ACCOUNT SWITCHER -->
     <div class="flex items-center space-x-3 text-xs">
-      <div id="accountContainer" class="hidden flex-col items-end">
-        <span id="accountEmail" class="font-semibold text-emerald-400">User</span>
-        <span id="accountBalance" class="text-slate-300 font-mono">Balance: $0.00</span>
+      <!-- REAL / DEMO TOGGLE -->
+      <div class="bg-[#060911] border border-slate-800 p-0.5 rounded-lg flex items-center">
+        <button id="modeReal" onclick="setAccountMode('real')" class="px-2.5 py-1 rounded text-[10px] font-bold transition text-slate-400">REAL</button>
+        <button id="modeDemo" onclick="setAccountMode('demo')" class="px-2.5 py-1 rounded text-[10px] font-bold transition bg-amber-500/20 text-amber-400">DEMO</button>
       </div>
-      <button onclick="promptManualToken()" id="tokenBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-1.5 px-3 rounded-lg transition">Enter API Token</button>
+
+      <!-- CURRENCY SELECTOR -->
+      <select id="currencySelect" onchange="updateBalanceDisplay()" class="bg-[#0f172a] border border-slate-700 text-slate-200 rounded px-2 py-1 outline-none font-mono text-[11px]">
+        <option value="USD">USD ($)</option>
+        <option value="KES">KES (KSh)</option>
+        <option value="EUR">EUR (€)</option>
+      </select>
+
+      <!-- AUTHENTICATED ACCOUNT INFO -->
+      <div id="accountContainer" class="hidden flex-col items-end font-mono">
+        <span id="accountEmail" class="font-semibold text-emerald-400 text-[11px]">User</span>
+        <span id="accountBalance" class="text-slate-200 text-xs font-bold">$0.00</span>
+      </div>
+
+      <!-- LOGIN MODAL TRIGGER -->
+      <button onclick="openAuthModal()" id="loginBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-1.5 px-3 rounded-lg transition">Log In / Connect</button>
       <button id="logoutBtn" onclick="logout()" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold py-1.5 px-3 rounded-lg transition hidden">Disconnect</button>
     </div>
   </header>
@@ -63,6 +80,12 @@
       <span id="livePriceDisplay" class="font-mono text-sm font-bold text-emerald-400">0.0000</span>
     </div>
 
+    <!-- SIGNAL STATUS DISPLAY -->
+    <div class="flex items-center space-x-3 font-mono">
+      <span class="text-slate-400 text-[10px]">AUTO SIGNAL:</span>
+      <span id="signalState" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400">ANALYZING...</span>
+    </div>
+
     <div class="flex items-center space-x-2">
       <span class="text-slate-400 text-[10px]">Recent Digits:</span>
       <div id="recentDigitsContainer" class="flex space-x-1 font-mono font-bold"></div>
@@ -74,9 +97,15 @@
 
     <!-- 1. DASHBOARD VIEW -->
     <section id="view-dashboard" class="space-y-6">
-      <div class="text-center py-6">
-        <h2 class="text-2xl font-bold text-slate-100 mb-2">Load or Build Your Bot</h2>
-        <p class="text-slate-400 text-sm">Import an XML strategy from your computer, build it from scratch, or start with a quick strategy.</p>
+      <div class="bg-gradient-to-r from-[#0b101d] via-[#0f172a] to-[#0b101d] border border-slate-800 p-8 rounded-2xl text-center relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl"></div>
+        <h2 class="text-3xl font-extrabold text-slate-100 mb-2">Automated Deriv Execution Platform</h2>
+        <p class="text-slate-400 text-sm max-w-2xl mx-auto">Analyze tick volatility patterns in real time and trigger automated trades directly to your Deriv account.</p>
+        
+        <div class="mt-6 flex justify-center space-x-4">
+          <button onclick="switchTab('builder')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-lg shadow-emerald-900/30 text-xs">Configure Bot Engine</button>
+          <button onclick="switchTab('digits')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 px-6 rounded-xl transition text-xs">Open Digit Analyzer</button>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -89,8 +118,8 @@
 
         <div onclick="switchTab('builder')" class="bg-[#0b101d] border border-slate-800 hover:border-emerald-500/50 p-6 rounded-xl text-center cursor-pointer transition group">
           <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition">🧱</div>
-          <h3 class="font-bold text-slate-200">Bot Builder</h3>
-          <p class="text-xs text-slate-400 mt-1">Assemble block-based logic & parameters</p>
+          <h3 class="font-bold text-slate-200">Bot Builder & Execution</h3>
+          <p class="text-xs text-slate-400 mt-1">Set logic, parameters & auto-triggers</p>
         </div>
 
         <div onclick="switchTab('bots')" class="bg-[#0b101d] border border-slate-800 hover:border-emerald-500/50 p-6 rounded-xl text-center cursor-pointer transition group">
@@ -107,27 +136,24 @@
         <h2 class="text-xl font-bold text-slate-200">Premium Trading Bots</h2>
         <p class="text-xs text-slate-400">Load optimized algorithmic strategies directly into your engine.</p>
       </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="botsCatalogGrid">
-        <!-- Dyn. populated via JS -->
-      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="botsCatalogGrid"></div>
     </section>
 
-    <!-- 3. BOT BUILDER VIEW -->
+    <!-- 3. BOT BUILDER & OSAM-STYLE RUNNER VIEW -->
     <section id="view-builder" class="hidden space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- BLOCK LOGIC SIMULATOR -->
+        <!-- BLOCK LOGIC & CONFIGURATION -->
         <div class="lg:col-span-2 bg-[#0b101d] border border-slate-800 rounded-xl p-6 space-y-4">
-          <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">1. Trade Parameters Block</h3>
+          <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">1. Strategy Configuration</h3>
           
           <div class="bg-[#060911] p-4 rounded-lg border border-slate-800 space-y-3 text-xs">
             <div class="flex flex-wrap items-center gap-2">
-              <span class="text-slate-400">Trade Type:</span>
-              <select id="builderTradeType" class="bg-[#0f172a] border border-slate-700 px-2 py-1 rounded text-slate-200">
-                <option value="DIGITOVER">Digits > Over/Under</option>
-                <option value="DIGITEVEN">Digits > Even/Odd</option>
-                <option value="DIGITMATCH">Digits > Matches/Differs</option>
+              <span class="text-slate-400">Trade Strategy:</span>
+              <select id="builderTradeType" class="bg-[#0f172a] border border-slate-700 px-2 py-1 rounded text-slate-200 font-semibold">
+                <option value="DIGITOVER">Digits > Over/Under Auto-Signal</option>
+                <option value="DIGITEVEN">Digits > Even/Odd Pattern Switch</option>
+                <option value="DIGITMATCH">Digits > Matches Frequency Spike</option>
               </select>
             </div>
 
@@ -162,32 +188,45 @@
             </div>
           </div>
 
-          <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider pt-2">2. Purchase Condition Block</h3>
-          <div class="bg-[#060911] p-4 rounded-lg border border-slate-800 text-xs text-slate-400">
-            Automated execution triggers dynamically based on live market tick analysis stream.
+          <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider pt-2">2. Intelligent Execution Engine</h3>
+          <div class="bg-[#060911] p-4 rounded-lg border border-slate-800 text-xs text-slate-400 space-y-2">
+            <p>The bot dynamically calculates consecutive parity streaks and digit probability density across a sliding 1,000 tick buffer.</p>
+            <div class="flex items-center space-x-2 text-[11px] font-mono text-slate-300">
+              <input type="checkbox" id="autoSignalTrigger" checked class="rounded bg-slate-900 border-slate-700">
+              <label for="autoSignalTrigger">Auto-execute trade when statistical signal threshold (>65%) is met</label>
+            </div>
           </div>
         </div>
 
-        <!-- EXECUTION HUD -->
-        <div class="bg-[#0b101d] border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
+        <!-- OSAM-STYLE FLOATING/SIDEBAR CONTROL PANEL -->
+        <div class="bg-[#0b101d] border border-slate-800 rounded-xl p-6 flex flex-col justify-between space-y-6">
           <div class="space-y-4">
-            <h3 class="font-bold text-slate-200">Execution Controls</h3>
-            <p class="text-xs text-slate-400">Deploy built parameters directly onto the Deriv WebSocket API stream.</p>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 class="font-bold text-slate-200">Execution Panel</h3>
+              <span id="botEngineBadge" class="bg-slate-800 text-slate-400 text-[10px] font-mono px-2 py-0.5 rounded uppercase font-bold">IDLE</span>
+            </div>
             
             <div id="activeBotName" class="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-400 text-xs font-semibold">
               Active Script: Standard Auto Engine
             </div>
+
+            <div class="space-y-2 text-xs font-mono">
+              <div class="flex justify-between text-slate-400"><span>Target Market:</span><span id="panelMarket" class="text-slate-200 font-bold">1HZ15V</span></div>
+              <div class="flex justify-between text-slate-400"><span>Session P/L:</span><span id="panelPL" class="text-emerald-400 font-bold">+$0.00</span></div>
+            </div>
           </div>
 
-          <button id="toggleBotBtn" onclick="toggleBot()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition mt-6">
-            Run Bot
+          <!-- OSAM STYLE FAB / BIG BUTTON -->
+          <button id="toggleBotBtn" onclick="toggleBot()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-4 rounded-xl text-base tracking-wider uppercase shadow-lg shadow-emerald-500/20 transition-all transform active:scale-95 flex items-center justify-center space-x-2">
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <span>Run Strategy</span>
           </button>
         </div>
 
       </div>
     </section>
 
-    <!-- 4. DIGIT ANALYSIS VIEW (FULL STATS & EVEN/ODD PATTERN) -->
+    <!-- 4. DIGIT ANALYSIS VIEW -->
     <section id="view-digits" class="hidden space-y-6">
       <div class="flex justify-between items-center">
         <div>
@@ -199,12 +238,10 @@
         </div>
       </div>
 
-      <!-- DIGIT CIRCULAR STATS GRID -->
-      <div class="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-3" id="digitStatsGrid">
-        <!-- Dynamically injected bars & rings -->
-      </div>
+      <!-- DIGIT CIRCULAR/BAR STATS GRID -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-3" id="digitStatsGrid"></div>
 
-      <!-- EVEN/ODD PATTERN visualizer -->
+      <!-- EVEN/ODD PATTERN VISUALIZER -->
       <div class="bg-[#0b101d] border border-slate-800 rounded-xl p-6 space-y-4">
         <div class="flex justify-between items-center">
           <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Even/Odd Distribution</h3>
@@ -220,13 +257,35 @@
         </div>
 
         <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider pt-4">Pattern Sequence (Latest Ticks)</h3>
-        <div id="patternGrid" class="grid grid-cols-10 gap-2 font-mono text-center text-xs">
-          <!-- Dynamically filled with E and O badges -->
+        <div id="patternGrid" class="grid grid-cols-10 gap-2 font-mono text-center text-xs"></div>
+      </div>
+    </section>
+
+    <!-- 5. MARKET INTELLIGENCE & AUTO ANALYZER VIEW -->
+    <section id="view-analytics" class="hidden space-y-6">
+      <div>
+        <h2 class="text-xl font-bold text-slate-200">Market Intelligence & Signal Matrix</h2>
+        <p class="text-xs text-slate-400">Automated multi-market scanner feeding trade conditions to the execution engine.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-[#0b101d] border border-slate-800 rounded-xl p-5 space-y-3">
+          <h3 class="text-xs font-bold text-slate-300 uppercase">Over/Under Probability Matrix</h3>
+          <div id="overUnderMatrix" class="space-y-2 text-xs font-mono"></div>
+        </div>
+
+        <div class="bg-[#0b101d] border border-slate-800 rounded-xl p-5 space-y-3">
+          <h3 class="text-xs font-bold text-slate-300 uppercase">Consecutive Streak Monitor</h3>
+          <div id="streakMonitor" class="p-4 bg-[#060911] border border-slate-800 rounded-lg text-center space-y-2">
+            <div class="text-slate-400 text-xs">Current Streak Pattern</div>
+            <div id="streakDisplay" class="text-2xl font-bold font-mono text-amber-400">0 EVEN IN A ROW</div>
+            <p class="text-[10px] text-slate-500">Reversal auto-executes when streak hits 4 consecutive ticks.</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- 5. TRANSACTIONS & LOG VIEW -->
+    <!-- 6. TRANSACTIONS & LOG VIEW -->
     <section id="view-journal" class="hidden space-y-6">
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
         <div class="bg-[#0b101d] border border-slate-800 p-4 rounded-xl">
@@ -255,7 +314,7 @@
             <thead>
               <tr class="border-b border-slate-800 bg-[#060911] text-slate-400 font-mono">
                 <th class="p-3">Type</th>
-                <th class="p-3">Entry/Exit Spot</th>
+                <th class="p-3">Contract ID</th>
                 <th class="p-3">Buy Price</th>
                 <th class="p-3">Profit/Loss</th>
               </tr>
@@ -272,10 +331,45 @@
 
   </main>
 
+  <!-- AUTHENTICATION MODAL (OAUTH & API TOKEN OPTIONS) -->
+  <div id="authModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-[#0b101d] border border-slate-800 w-full max-w-md rounded-2xl p-6 space-y-6 relative">
+      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">✕</button>
+      
+      <div class="text-center">
+        <h3 class="text-xl font-bold text-slate-100">Connect Deriv Account</h3>
+        <p class="text-xs text-slate-400 mt-1">Select your preferred authentication method</p>
+      </div>
+
+      <!-- OPTION 1: RECOMMENDED OAUTH -->
+      <div class="space-y-3">
+        <button onclick="redirectToOAuth()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center space-x-2 transition shadow-lg shadow-emerald-900/30">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <span>Log In via Deriv OAuth (Recommended)</span>
+        </button>
+        <p class="text-[10px] text-slate-500 text-center">Secure official login direct through Deriv permissions.</p>
+      </div>
+
+      <div class="flex items-center my-4">
+        <div class="flex-1 border-t border-slate-800"></div>
+        <span class="px-3 text-[10px] text-slate-500 uppercase font-mono">OR API TOKEN</span>
+        <div class="flex-1 border-t border-slate-800"></div>
+      </div>
+
+      <!-- OPTION 2: API TOKEN -->
+      <div class="space-y-3">
+        <input type="text" id="manualTokenInput" placeholder="Enter Deriv API Token" class="w-full bg-[#060911] border border-slate-700 p-3 rounded-xl text-xs text-slate-200 font-mono outline-none focus:border-emerald-500">
+        <button onclick="submitManualToken()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl text-xs transition">Connect via API Token</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const APP_ID = "348Mnoh1ko1D10tYBCueg";
     let ws = null;
     let token = localStorage.getItem('deriv_token') || null;
+    let rawBalanceUSD = 0;
+    let accountMode = localStorage.getItem('deriv_account_mode') || 'demo';
     let currentMarket = "1HZ15V";
     let digitHistory = [];
     let botActive = false;
@@ -296,13 +390,25 @@
     ];
 
     window.addEventListener('DOMContentLoaded', () => {
+      parseOAuthUrlParams();
       renderBotsCatalog();
       initDigitGrid();
+      updateAccountModeUI();
       initWebSocket();
     });
 
+    function parseOAuthUrlParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token1 = urlParams.get('token1');
+      if (token1) {
+        token = token1;
+        localStorage.setItem('deriv_token', token);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
     function switchTab(tabId) {
-      ['dashboard', 'bots', 'builder', 'digits', 'journal'].forEach(t => {
+      ['dashboard', 'bots', 'builder', 'digits', 'analytics', 'journal'].forEach(t => {
         document.getElementById(`view-${t}`).classList.add('hidden');
         document.getElementById(`tab-${t}`).classList.remove('tab-active');
       });
@@ -333,6 +439,25 @@
       switchTab('builder');
     }
 
+    function setAccountMode(mode) {
+      accountMode = mode;
+      localStorage.setItem('deriv_account_mode', mode);
+      updateAccountModeUI();
+      if (ws && token) ws.send(JSON.stringify({ authorize: token }));
+    }
+
+    function updateAccountModeUI() {
+      const realBtn = document.getElementById('modeReal');
+      const demoBtn = document.getElementById('modeDemo');
+      if (accountMode === 'real') {
+        realBtn.className = "px-2.5 py-1 rounded text-[10px] font-bold transition bg-emerald-500/20 text-emerald-400";
+        demoBtn.className = "px-2.5 py-1 rounded text-[10px] font-bold transition text-slate-400";
+      } else {
+        demoBtn.className = "px-2.5 py-1 rounded text-[10px] font-bold transition bg-amber-500/20 text-amber-400";
+        realBtn.className = "px-2.5 py-1 rounded text-[10px] font-bold transition text-slate-400";
+      }
+    }
+
     function initWebSocket() {
       ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${APP_ID}`);
 
@@ -346,12 +471,14 @@
 
         if (data.msg_type === 'authorize') {
           if (!data.error) {
-            document.getElementById('tokenBtn').classList.add('hidden');
+            document.getElementById('loginBtn').classList.add('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
             document.getElementById('accountContainer').classList.remove('hidden');
             document.getElementById('accountContainer').classList.add('flex');
             document.getElementById('accountEmail').innerText = data.authorize.email;
-            document.getElementById('accountBalance').innerText = `Balance: $${data.authorize.balance}`;
+            
+            rawBalanceUSD = parseFloat(data.authorize.balance);
+            updateBalanceDisplay();
           }
         }
 
@@ -386,8 +513,25 @@
       ws.onclose = () => setTimeout(initWebSocket, 3000);
     }
 
+    function updateBalanceDisplay() {
+      const currency = document.getElementById('currencySelect').value;
+      let displayVal = rawBalanceUSD;
+      let symbol = "$";
+
+      if (currency === "KES") {
+        displayVal = rawBalanceUSD * 130; // Approx rate
+        symbol = "KSh ";
+      } else if (currency === "EUR") {
+        displayVal = rawBalanceUSD * 0.92;
+        symbol = "€";
+      }
+
+      document.getElementById('accountBalance').innerText = `${symbol}${displayVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+
     function subscribeMarket(market) {
       digitHistory = [];
+      document.getElementById('panelMarket').innerText = market;
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ forget_all: "ticks" }));
         ws.send(JSON.stringify({ ticks: market }));
@@ -452,7 +596,23 @@
         </div>
       `).join('');
 
+      // Evaluate signal and check auto-execution
+      evaluateMarketSignal(evenPct);
       if (botActive && !tradeInProgress) executeBotLogic();
+    }
+
+    function evaluateMarketSignal(evenPct) {
+      const signalEl = document.getElementById('signalState');
+      if (evenPct > 60) {
+        signalEl.innerText = "SIGNAL: CALL / EVEN";
+        signalEl.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 animate-pulse";
+      } else if (evenPct < 40) {
+        signalEl.innerText = "SIGNAL: PUT / ODD";
+        signalEl.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 animate-pulse";
+      } else {
+        signalEl.innerText = "SIGNAL: NEUTRAL";
+        signalEl.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400";
+      }
     }
 
     function executeBotLogic() {
@@ -485,7 +645,6 @@
       const stake = buyData.buy_price;
       totalStake += stake;
       
-      // Simulated win/payout handling for preview metrics
       const profit = stake * 0.9;
       totalPayout += (stake + profit);
       contractsWon++;
@@ -494,6 +653,7 @@
       document.getElementById('statTotalPayout').innerText = `$${totalPayout.toFixed(2)}`;
       document.getElementById('statWon').innerText = contractsWon;
       document.getElementById('statPL').innerText = `+$${(totalPayout - totalStake).toFixed(2)}`;
+      document.getElementById('panelPL').innerText = `+$${(totalPayout - totalStake).toFixed(2)}`;
 
       const tbody = document.getElementById('transactionTableBody');
       if (tbody.children[0]?.children.length === 1) tbody.innerHTML = '';
@@ -508,20 +668,29 @@
       ` + tbody.innerHTML;
     }
 
+    function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
+    function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
+
+    function redirectToOAuth() {
+      const redirectUri = window.location.href.split('?')[0];
+      window.location.href = `https://oauth.deriv.com/oauth2/authorize?app_id=${APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    }
+
+    function submitManualToken() {
+      const val = document.getElementById('manualTokenInput').value.trim();
+      if (val) {
+        token = val;
+        localStorage.setItem('deriv_token', token);
+        ws.send(JSON.stringify({ authorize: token }));
+        closeAuthModal();
+      }
+    }
+
     function loadLocalXml(event) {
       const file = event.target.files[0];
       if (file) {
         alert(`Successfully imported script XML: ${file.name}`);
         switchTab('builder');
-      }
-    }
-
-    function promptManualToken() {
-      const input = prompt("Enter Deriv API Token:");
-      if (input) {
-        token = input.trim();
-        localStorage.setItem('deriv_token', token);
-        ws.send(JSON.stringify({ authorize: token }));
       }
     }
 
@@ -533,12 +702,17 @@
     function toggleBot() {
       botActive = !botActive;
       const btn = document.getElementById('toggleBotBtn');
+      const badge = document.getElementById('botEngineBadge');
       if (botActive) {
-        btn.innerText = "Stop Bot";
-        btn.className = "w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-lg transition mt-6";
+        btn.innerHTML = `<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg><span>Stop Strategy</span>`;
+        btn.className = "w-full bg-rose-600 hover:bg-rose-500 text-white font-black py-4 rounded-xl text-base tracking-wider uppercase shadow-lg shadow-rose-900/30 transition-all transform active:scale-95 flex items-center justify-center space-x-2";
+        badge.innerText = "RUNNING";
+        badge.className = "bg-emerald-500/20 text-emerald-400 text-[10px] font-mono px-2 py-0.5 rounded uppercase font-bold animate-pulse";
       } else {
-        btn.innerText = "Run Bot";
-        btn.className = "w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition mt-6";
+        btn.innerHTML = `<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span>Run Strategy</span>`;
+        btn.className = "w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-4 rounded-xl text-base tracking-wider uppercase shadow-lg shadow-emerald-500/20 transition-all transform active:scale-95 flex items-center justify-center space-x-2";
+        badge.innerText = "IDLE";
+        badge.className = "bg-slate-800 text-slate-400 text-[10px] font-mono px-2 py-0.5 rounded uppercase font-bold";
       }
     }
   </script>
