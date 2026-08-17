@@ -18,17 +18,17 @@
   <!-- TOP NAVIGATION HEADER -->
   <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
     <div class="flex items-center space-x-3">
-      <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+      <div id="statusDot" class="w-3 h-3 rounded-full bg-rose-500"></div>
       <h1 class="text-xl font-bold tracking-wider text-emerald-400">SOET KENYA <span class="text-slate-400 text-sm font-normal">| Deriv Suite</span></h1>
     </div>
     
     <!-- OAUTH LOGIN / ACCOUNT STATUS -->
     <div id="authSection" class="flex items-center space-x-4">
       <span id="accountInfo" class="text-xs text-slate-400 hidden">Not Logged In</span>
-      <button id="loginBtn" onclick="loginWithDeriv()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2 px-4 rounded-lg transition">
+      <button id="loginBtn" onclick="loginWithDeriv()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2 px-4 rounded-lg transition cursor-pointer">
         Connect Deriv OAuth
       </button>
-      <button id="logoutBtn" onclick="logout()" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs py-2 px-4 rounded-lg transition hidden">
+      <button id="logoutBtn" onclick="logout()" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs py-2 px-4 rounded-lg transition hidden cursor-pointer">
         Disconnect
       </button>
     </div>
@@ -126,7 +126,7 @@
   <!-- WEBSOCKET & OAUTH SCRIPT -->
   <script>
     // Configuration
-    const APP_ID = "348Mnoh1kolD10tYBCueg"; // Replace with your registered Deriv App ID
+    const APP_ID = "348Mnoh1ko1D10tYBCueg"; // Your exact registered Deriv App ID
     let ws;
     let token = null;
     let digitHistory = [];
@@ -142,14 +142,19 @@
     }
 
     // Initialize Page & Handle OAuth Redirect Tokens
-    window.onload = function() {
+    window.addEventListener('DOMContentLoaded', () => {
       renderDigitGrid();
       
       // Parse token from URL parameters after OAuth redirect
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('acct1') && urlParams.has('token1')) {
-        token = urlParams.get('token1');
+      const urlToken = urlParams.get('token1');
+      const urlAccount = urlParams.get('acct1');
+
+      if (urlToken) {
+        token = urlToken;
         localStorage.setItem('deriv_token', token);
+        if (urlAccount) localStorage.setItem('deriv_account', urlAccount);
+        
         // Clean URL params without reloading page
         window.history.replaceState({}, document.title, window.location.pathname);
       } else {
@@ -158,8 +163,10 @@
 
       if (token) {
         connectWebSocket();
+      } else {
+        log("No active token found. Please click 'Connect Deriv OAuth'.");
       }
-    };
+    });
 
     // Redirect user to official Deriv OAuth page
     function loginWithDeriv() {
@@ -170,16 +177,17 @@
 
     function logout() {
       localStorage.removeItem('deriv_token');
+      localStorage.removeItem('deriv_account');
       location.reload();
     }
 
     // Connect WebSocket and Authorize
     function connectWebSocket() {
       log("Connecting to Deriv WebSocket...");
-      ws = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${APP_ID}`);
+      ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${APP_ID}`);
 
       ws.onopen = function() {
-        log("WebSocket connected. Authorizing token...");
+        log("WebSocket connected. Authorizing session...");
         ws.send(JSON.stringify({ authorize: token }));
       };
 
@@ -191,18 +199,21 @@
             log(`Auth Error: ${data.error.message}`);
             logout();
           } else {
-            log(`Authorized successfully! Account: ${data.authorize.email}`);
+            log(`Authorized successfully! Account: ${data.authorize.email} (${data.authorize.loginid})`);
+            
+            // Update Top Header UI
+            document.getElementById('statusDot').className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
             document.getElementById('loginBtn').classList.add('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
             document.getElementById('accountInfo').classList.remove('hidden');
-            document.getElementById('accountInfo').innerText = data.authorize.email;
+            document.getElementById('accountInfo').innerText = `${data.authorize.email} | ${data.authorize.loginid}`;
             
-            // Enable Bot Toggle
+            // Enable Bot Toggle Button
             const botBtn = document.getElementById('toggleBotBtn');
             botBtn.disabled = false;
             botBtn.className = "w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition cursor-pointer";
 
-            // Subscribe to Ticks
+            // Subscribe to Live Ticks (Volatility 100 Index)
             ws.send(JSON.stringify({ ticks: "R_100" }));
           }
         }
@@ -218,7 +229,8 @@
         }
       };
 
-      ws.onerror = function(err) { log(`WS Error: ${err}`); };
+      ws.onerror = function(err) { log(`WS Error: Connection error.`); };
+      ws.onclose = function() { log("WebSocket disconnected."); };
     }
 
     // Render 0-9 Digit Heatmap Bars
@@ -278,7 +290,7 @@
     function executeTrade(digit) {
       tradeInProgress = true;
       const stake = parseFloat(document.getElementById('stakeAmount').value);
-      log(`SIGNAL HIT! Digit ${digit} frequency reached threshold. Sending proposal...`);
+      log(`SIGNAL HIT! Digit ${digit} frequency reached threshold. Requesting contract proposal...`);
 
       // 1. Get Proposal
       ws.send(JSON.stringify({
@@ -334,4 +346,3 @@
   </script>
 </body>
 </html>
-
