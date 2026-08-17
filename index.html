@@ -1,209 +1,227 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-[#050811]">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SOET KENYA | Live Market Engine</title>
+  <title>SOET KENYA | Dynamic Bot Platform</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #090d16; }
-    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-    .tab-active { border-bottom: 2px solid #10b981; color: #10b981; font-weight: 600; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #050811; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 999px; }
+
+    /* Flashing Animations for Live Ticks */
+    @keyframes flashUp { 0% { background-color: rgba(16, 185, 129, 0.3); } 100% { background-color: transparent; } }
+    @keyframes flashDown { 0% { background-color: rgba(244, 63, 94, 0.3); } 100% { background-color: transparent; } }
+    .tick-up { animation: flashUp 0.6s ease-out; }
+    .tick-down { animation: flashDown 0.6s ease-out; }
   </style>
 </head>
-<body class="bg-[#060911] text-slate-100 font-sans min-h-screen flex flex-col">
+<body class="h-full text-slate-200 flex flex-col overflow-x-hidden">
 
-  <!-- HEADER -->
-  <header class="bg-[#0b101d] border-b border-slate-800/80 px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
-    <div class="flex items-center space-x-3">
-      <div id="statusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-      <h1 class="text-lg font-bold tracking-wider text-emerald-400">SOET KENYA <span class="text-slate-400 text-xs font-normal">| Live Deriv Engine</span></h1>
+  <!-- SMOOTH ENTRY SPLASH SCREEN -->
+  <div id="splashLoader" class="fixed inset-0 z-50 bg-[#050811] flex flex-col items-center justify-center transition-opacity duration-700">
+    <div class="relative flex items-center justify-center">
+      <div class="w-20 h-20 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+      <span class="absolute font-black text-xs tracking-wider text-emerald-400">SOET</span>
     </div>
+    <p class="mt-4 text-xs font-mono text-slate-400 animate-pulse">Establishing Deriv Telemetry Stream...</p>
+  </div>
 
-    <nav class="flex space-x-6 text-xs text-slate-400 font-medium">
-      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-active py-2 transition">Dashboard</button>
-      <button onclick="switchTab('digits')" id="tab-digits" class="py-2 transition">Digit Analysis</button>
-      <button onclick="switchTab('analytics')" id="tab-analytics" class="py-2 transition">Market Intelligence</button>
-      <button onclick="switchTab('builder')" id="tab-builder" class="py-2 transition">Execution Engine</button>
-      <button onclick="switchTab('journal')" id="tab-journal" class="py-2 transition">Transactions</button>
-    </nav>
-
-    <div class="flex items-center space-x-3 text-xs">
-      <div class="bg-[#060911] border border-slate-800 p-0.5 rounded-lg flex items-center">
-        <button id="modeReal" onclick="setAccountMode('real')" class="px-2.5 py-1 rounded text-[10px] font-bold text-slate-400">REAL</button>
-        <button id="modeDemo" onclick="setAccountMode('demo')" class="px-2.5 py-1 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400">DEMO</button>
+  <!-- MAIN NAVIGATION -->
+  <header class="bg-[#0b0f19]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 px-6 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- BRAND & STATUS -->
+      <div class="flex items-center space-x-3">
+        <div class="relative flex h-3 w-3">
+          <span id="statusPulse" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span id="statusDot" class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+        </div>
+        <div>
+          <h1 class="text-base font-extrabold tracking-wider bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">SOET KENYA</h1>
+          <p class="text-[10px] text-slate-400 font-mono leading-none">Automated Trading Suite</p>
+        </div>
       </div>
 
-      <select id="currencySelect" onchange="updateBalanceDisplay()" class="bg-[#0f172a] border border-slate-700 text-slate-200 rounded px-2 py-1 outline-none font-mono text-[11px]">
-        <option value="USD">USD ($)</option>
-        <option value="KES">KES (KSh)</option>
-        <option value="EUR">EUR (€)</option>
-      </select>
+      <!-- NAVIGATION TABS -->
+      <nav class="flex items-center space-x-1 bg-[#050811] p-1 rounded-xl border border-slate-800/80 text-xs font-semibold">
+        <button onclick="switchTab('analytics')" id="tab-analytics" class="px-4 py-2 rounded-lg text-emerald-400 bg-emerald-500/10 transition">Digit Intelligence</button>
+        <button onclick="switchTab('bot')" id="tab-bot" class="px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition">Bot Studio</button>
+        <button onclick="switchTab('journal')" id="tab-journal" class="px-4 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition">Executions</button>
+      </nav>
 
-      <div id="accountContainer" class="hidden flex-col items-end font-mono">
-        <span id="accountEmail" class="font-semibold text-emerald-400 text-[11px]">User</span>
-        <span id="accountBalance" class="text-slate-200 text-xs font-bold">$0.00</span>
+      <!-- ACCOUNT CONTROLS -->
+      <div class="flex items-center space-x-3 text-xs">
+        <div id="accountBox" class="hidden font-mono text-right">
+          <div id="accountBalance" class="text-emerald-400 font-bold">$0.00</div>
+          <div id="accountEmail" class="text-[10px] text-slate-500">Connected</div>
+        </div>
+        <button id="loginBtn" onclick="openAuthModal()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-2 px-4 rounded-xl shadow-lg shadow-emerald-900/20 transition">Connect Deriv</button>
       </div>
 
-      <button onclick="openAuthModal()" id="loginBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-1.5 px-3 rounded-lg transition">Log In / Connect</button>
-      <button id="logoutBtn" onclick="logout()" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold py-1.5 px-3 rounded-lg transition hidden">Disconnect</button>
     </div>
   </header>
 
-  <!-- LIVE MARKET STATS TICKER BANNER -->
-  <div class="bg-[#090d16] border-b border-slate-800/60 px-6 py-2.5 flex flex-wrap justify-between items-center text-xs gap-4 font-mono">
-    <div class="flex items-center space-x-4">
-      <span class="text-slate-400 uppercase font-semibold text-[10px]">Active Market:</span>
-      <select id="marketSelect" onchange="changeMarket(this.value)" class="bg-[#0f172a] border border-slate-700 text-slate-200 rounded px-2.5 py-1 outline-none font-semibold">
-        <option value="1HZ10V">Volatility 10 (1s) Index</option>
-        <option value="1HZ15V" selected>Volatility 15 (1s) Index</option>
-        <option value="1HZ25V">Volatility 25 (1s) Index</option>
-        <option value="1HZ30V">Volatility 30 (1s) Index</option>
-        <option value="1HZ50V">Volatility 50 (1s) Index</option>
-        <option value="1HZ75V">Volatility 75 (1s) Index</option>
-        <option value="1HZ90V">Volatility 90 (1s) Index</option>
-        <option value="1HZ100V">Volatility 100 (1s) Index</option>
-        <option value="R_10">Volatility 10 Index</option>
-        <option value="R_25">Volatility 25 Index</option>
-        <option value="R_50">Volatility 50 Index</option>
-        <option value="R_75">Volatility 75 Index</option>
-        <option value="R_100">Volatility 100 Index</option>
-      </select>
-      <span id="livePriceDisplay" class="text-sm font-bold text-emerald-400">0.0000</span>
-      <span id="marketChangeDisplay" class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400">+0.00%</span>
+  <!-- LIVE MARKET STATS BAR -->
+  <section id="tickerBar" class="bg-[#080d1a] border-b border-slate-800/60 px-6 py-2.5 transition-colors duration-300">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 font-mono text-xs">
+      
+      <div class="flex items-center space-x-3">
+        <span class="text-slate-500 text-[11px] font-sans font-bold">MARKET:</span>
+        <select id="marketSelect" onchange="changeMarket(this.value)" class="bg-[#0e1626] border border-slate-700 text-emerald-400 font-bold rounded-lg px-3 py-1 outline-none">
+          <option value="1HZ10V">Volatility 10 (1s)</option>
+          <option value="1HZ15V" selected>Volatility 15 (1s)</option>
+          <option value="1HZ25V">Volatility 25 (1s)</option>
+          <option value="1HZ50V">Volatility 50 (1s)</option>
+          <option value="1HZ75V">Volatility 75 (1s)</option>
+          <option value="1HZ100V">Volatility 100 (1s)</option>
+          <option value="R_100">Volatility 100 Index</option>
+        </select>
+      </div>
+
+      <div class="flex items-center space-x-6">
+        <div>
+          <span class="text-slate-500 text-[10px]">SPOT PRICE</span>
+          <div id="livePrice" class="text-base font-bold text-slate-100">0.0000</div>
+        </div>
+        <div>
+          <span class="text-slate-500 text-[10px]">24H CHANGE</span>
+          <div id="priceChange" class="text-xs font-bold text-emerald-400">+0.00%</div>
+        </div>
+      </div>
+
+      <!-- LAST TICK DISPLAY -->
+      <div class="flex items-center space-x-2">
+        <span class="text-slate-500 text-[10px]">LAST DIGIT:</span>
+        <div id="lastDigitBadge" class="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center font-bold text-sm text-emerald-400 shadow-md transition-all">0</div>
+      </div>
+
     </div>
+  </section>
 
-    <!-- DERIV MARKET METRICS -->
-    <div class="flex items-center space-x-6 text-[11px]">
-      <div><span class="text-slate-500">24H HIGH: </span><span id="statHigh" class="text-slate-300">0.00</span></div>
-      <div><span class="text-slate-500">24H LOW: </span><span id="statLow" class="text-slate-300">0.00</span></div>
-      <div><span class="text-slate-500">TICK VOLATILITY: </span><span id="statVol" class="text-amber-400">MEDIUM</span></div>
-    </div>
+  <!-- CONTENT VIEWS -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-6">
 
-    <div class="flex items-center space-x-2">
-      <span class="text-slate-400 text-[10px]">Recent Digits:</span>
-      <div id="recentDigitsContainer" class="flex space-x-1 font-bold"></div>
-    </div>
-  </div>
+    <!-- VIEW 1: CIRCULAR DIGIT ANALYSIS -->
+    <section id="view-analytics" class="space-y-6">
+      <div class="flex justify-between items-end border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-bold text-slate-100">Digit Telemetry</h2>
+          <p class="text-xs text-slate-400">Live frequency distribution across 1,000 tick samples</p>
+        </div>
+        <div class="font-mono text-xs text-slate-400">
+          Samples: <span id="sampleCount" class="text-emerald-400 font-bold">1000</span>
+        </div>
+      </div>
 
-  <!-- MAIN VIEWS -->
-  <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
+      <!-- 0-9 CIRCULAR METRIC CARDS -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-4" id="digitCirclesContainer">
+        <!-- Rendered Dynamically -->
+      </div>
 
-    <!-- DASHBOARD VIEW -->
-    <section id="view-dashboard" class="space-y-6">
-      <div class="bg-gradient-to-r from-[#0b101d] via-[#0f172a] to-[#0b101d] border border-slate-800 p-8 rounded-2xl text-center relative overflow-hidden">
-        <h2 class="text-3xl font-extrabold text-slate-100 mb-2">Live Deriv Market Telemetry</h2>
-        <p class="text-slate-400 text-sm max-w-2xl mx-auto">Connected directly to Deriv WebSocket production servers. Streaming live candle histories, price volatility shifts, and last digit probabilities.</p>
-        
-        <div class="mt-6 flex justify-center space-x-4">
-          <button onclick="switchTab('analytics')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-lg shadow-emerald-900/30 text-xs">Market Intelligence Matrix</button>
-          <button onclick="switchTab('builder')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 px-6 rounded-xl transition text-xs">Run Execution Engine</button>
+      <!-- EVEN vs ODD PARITY METER -->
+      <div class="bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-6 space-y-4 shadow-xl">
+        <div class="flex justify-between items-center font-mono text-xs">
+          <span class="text-emerald-400 font-bold">EVEN: <span id="evenPct">50.0%</span></span>
+          <span class="text-slate-400 font-sans font-bold">PARITY BALANCE</span>
+          <span class="text-rose-400 font-bold">ODD: <span id="oddPct">50.0%</span></span>
+        </div>
+        <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden flex p-0.5 border border-slate-800">
+          <div id="evenBar" class="bg-emerald-500 h-full rounded-l-full transition-all duration-300" style="width: 50%"></div>
+          <div id="oddBar" class="bg-rose-500 h-full rounded-r-full transition-all duration-300" style="width: 50%"></div>
         </div>
       </div>
     </section>
 
-    <!-- DIGIT ANALYSIS VIEW -->
-    <section id="view-digits" class="hidden space-y-6">
-      <div class="flex justify-between items-center">
-        <div>
-          <h2 class="text-xl font-bold text-slate-200">Real Digit Distribution</h2>
-          <p class="text-xs text-slate-400">Calculated directly from Deriv historical tick buffers.</p>
-        </div>
-        <div class="text-xs bg-[#0b101d] border border-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-mono">
-          Analyzed Buffer: <span id="sampleWindowCount" class="text-emerald-400 font-bold">1000</span> Ticks
-        </div>
+    <!-- VIEW 2: BOT BUILDER & EXECUTION -->
+    <section id="view-bot" class="hidden space-y-6">
+      <div class="border-b border-slate-800 pb-4">
+        <h2 class="text-xl font-bold text-slate-100">Execution Parameters</h2>
+        <p class="text-xs text-slate-400">Configure bot logic, risk variables, and entry thresholds</p>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-3" id="digitStatsGrid"></div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- PARAMETER INPUT MATRIX -->
+        <div class="lg:col-span-2 bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-6 space-y-6 shadow-xl">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-mono">
+            
+            <div class="space-y-2">
+              <label class="text-slate-400 font-sans font-semibold">Initial Stake ($)</label>
+              <input type="number" id="botStake" value="1.00" step="0.5" class="w-full bg-[#050811] border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-slate-100 outline-none transition">
+            </div>
 
-      <div class="bg-[#0b101d] border border-slate-800 rounded-xl p-6 space-y-4">
-        <div class="flex justify-between items-center">
-          <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Even/Odd Ratio</h3>
-          <div class="flex space-x-6 text-xs font-mono font-bold">
-            <span class="text-emerald-400">EVEN: <span id="evenPct">50.0%</span></span>
-            <span class="text-rose-400">ODD: <span id="oddPct">50.0%</span></span>
+            <div class="space-y-2">
+              <label class="text-slate-400 font-sans font-semibold">Target Barrier / Digit</label>
+              <input type="number" id="botBarrier" value="5" min="0" max="9" class="w-full bg-[#050811] border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-slate-100 outline-none transition">
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-slate-400 font-sans font-semibold">Martingale Multiplier</label>
+              <input type="number" id="botMultiplier" value="2.1" step="0.1" class="w-full bg-[#050811] border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-slate-100 outline-none transition">
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-slate-400 font-sans font-semibold">Max Continuous Losses</label>
+              <input type="number" id="botMaxLoss" value="4" class="w-full bg-[#050811] border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-slate-100 outline-none transition">
+            </div>
+
+          </div>
+
+          <div class="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl text-xs text-emerald-400 flex items-center space-x-3">
+            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></div>
+            <span>Auto-execution uses active WebSocket tokens to submit trades instantly when market conditions match parameters.</span>
           </div>
         </div>
 
-        <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden flex">
-          <div id="evenBar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 50%"></div>
-          <div id="oddBar" class="bg-rose-500 h-full transition-all duration-300" style="width: 50%"></div>
-        </div>
-
-        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider pt-4">Pattern Sequence</h3>
-        <div id="patternGrid" class="grid grid-cols-10 gap-2 font-mono text-center text-xs"></div>
-      </div>
-    </section>
-
-    <!-- MARKET INTELLIGENCE VIEW -->
-    <section id="view-analytics" class="hidden space-y-6">
-      <div>
-        <h2 class="text-xl font-bold text-slate-200">Deriv Technical Analysis Matrix</h2>
-        <p class="text-xs text-slate-400">Real-time indicators calculated on live market streams.</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono text-xs">
-        <div class="bg-[#0b101d] border border-slate-800 p-5 rounded-xl space-y-2">
-          <div class="text-slate-500">SIGNAL CONDITION</div>
-          <div id="signalState" class="text-lg font-bold text-emerald-400">NEUTRAL / WAITING</div>
-        </div>
-        <div class="bg-[#0b101d] border border-slate-800 p-5 rounded-xl space-y-2">
-          <div class="text-slate-500">CURRENT PARITY STREAK</div>
-          <div id="streakDisplay" class="text-lg font-bold text-amber-400">0 EVEN</div>
-        </div>
-        <div class="bg-[#0b101d] border border-slate-800 p-5 rounded-xl space-y-2">
-          <div class="text-slate-500">PRICE MOMENTUM</div>
-          <div id="momentumDisplay" class="text-lg font-bold text-blue-400">STABLE</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- EXECUTION ENGINE VIEW -->
-    <section id="view-builder" class="hidden space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 bg-[#0b101d] border border-slate-800 rounded-xl p-6 space-y-4">
-          <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Strategy Inputs</h3>
-          <div class="bg-[#060911] p-4 rounded-lg border border-slate-800 space-y-3 text-xs font-mono">
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-slate-500 text-[10px] mb-1">STAKE ($)</label>
-                <input type="number" id="builderStake" value="1.0" class="w-full bg-[#0f172a] border border-slate-700 p-2 rounded text-slate-200">
-              </div>
-              <div>
-                <label class="block text-slate-500 text-[10px] mb-1">PREDICTION BARRIER</label>
-                <input type="number" id="builderPrediction" value="2" min="0" max="9" class="w-full bg-[#0f172a] border border-slate-700 p-2 rounded text-slate-200">
-              </div>
+        <!-- BOT CONTROLLER CARD -->
+        <div class="bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between shadow-xl space-y-6">
+          <div>
+            <span class="text-xs text-slate-500 uppercase tracking-widest font-mono font-bold">Engine Status</span>
+            <div id="botStateBadge" class="mt-2 p-3 rounded-xl bg-slate-900 border border-slate-800 text-center font-mono font-bold text-slate-400 text-sm">
+              ENGINE READY
             </div>
           </div>
-        </div>
 
-        <div class="bg-[#0b101d] border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
-          <div class="space-y-4">
-            <h3 class="font-bold text-slate-200">Osam Bot Runner</h3>
-            <div id="botEngineBadge" class="p-2 bg-slate-800 text-slate-400 text-[10px] font-mono rounded uppercase font-bold text-center">ENGINE IDLE</div>
+          <div class="space-y-3 font-mono text-xs border-t border-b border-slate-800 py-4">
+            <div class="flex justify-between"><span class="text-slate-500">Total Trades:</span><span id="statTrades" class="font-bold text-slate-200">0</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Wins / Losses:</span><span id="statWinLoss" class="font-bold text-slate-200">0 / 0</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">Net Profit:</span><span id="statProfit" class="font-bold text-emerald-400">$0.00</span></div>
           </div>
-          <button id="toggleBotBtn" onclick="toggleBot()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-4 rounded-xl text-base tracking-wider uppercase shadow-lg shadow-emerald-500/20 transition-all transform active:scale-95 flex items-center justify-center space-x-2">
-            <span>Run Strategy</span>
+
+          <button id="runBotBtn" onclick="toggleBot()" class="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all active:scale-95">
+            Start Strategy
           </button>
         </div>
+
       </div>
     </section>
 
-    <!-- TRANSACTIONS VIEW -->
+    <!-- VIEW 3: JOURNAL -->
     <section id="view-journal" class="hidden space-y-6">
-      <div class="bg-[#0b101d] border border-slate-800 rounded-xl overflow-hidden text-xs">
-        <div class="p-4 border-b border-slate-800 font-bold text-slate-300">Live Executions</div>
-        <table class="w-full text-left font-mono">
-          <thead>
-            <tr class="border-b border-slate-800 bg-[#060911] text-slate-400">
-              <th class="p-3">Contract ID</th>
-              <th class="p-3">Buy Price</th>
-              <th class="p-3">Payout</th>
+      <div class="border-b border-slate-800 pb-4">
+        <h2 class="text-xl font-bold text-slate-100">Live Execution Journal</h2>
+        <p class="text-xs text-slate-400">Real-time trade telemetry and contract settlements</p>
+      </div>
+
+      <div class="bg-[#0b0f19] border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
+        <table class="w-full text-left font-mono text-xs">
+          <thead class="bg-[#050811] text-slate-400 border-b border-slate-800">
+            <tr>
+              <th class="p-4">Reference ID</th>
+              <th class="p-4">Type</th>
+              <th class="p-4">Stake</th>
+              <th class="p-4">Outcome</th>
             </tr>
           </thead>
-          <tbody id="transactionTableBody" class="divide-y divide-slate-800/50">
-            <tr><td colspan="3" class="p-4 text-center text-slate-500">No positions executed yet.</td></tr>
+          <tbody id="journalBody" class="divide-y divide-slate-800/60 text-slate-300">
+            <tr><td colspan="4" class="p-6 text-center text-slate-500">No active positions executed in this session.</td></tr>
           </tbody>
         </table>
       </div>
@@ -213,15 +231,13 @@
 
   <!-- AUTH MODAL -->
   <div id="authModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-[#0b101d] border border-slate-800 w-full max-w-md rounded-2xl p-6 space-y-6 relative">
+    <div class="bg-[#0b0f19] border border-slate-800 w-full max-w-sm rounded-2xl p-6 space-y-5 relative shadow-2xl">
       <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">✕</button>
-      <div class="text-center">
-        <h3 class="text-xl font-bold text-slate-100">Connect Deriv Account</h3>
-      </div>
-      <button onclick="redirectToOAuth()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs transition">Log In via Deriv OAuth</button>
-      <div class="space-y-3">
-        <input type="text" id="manualTokenInput" placeholder="Enter Deriv API Token" class="w-full bg-[#060911] border border-slate-700 p-3 rounded-xl text-xs text-slate-200 font-mono outline-none">
-        <button onclick="submitManualToken()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl text-xs transition">Connect via Token</button>
+      <h3 class="text-lg font-bold text-slate-100 text-center">Deriv Connection</h3>
+      <button onclick="redirectToOAuth()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl text-xs transition">Connect via Deriv OAuth</button>
+      <div class="space-y-2">
+        <input type="text" id="manualToken" placeholder="Or paste API Token here" class="w-full bg-[#050811] border border-slate-700 p-3 rounded-xl text-xs text-slate-200 font-mono outline-none">
+        <button onclick="submitManualToken()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl text-xs transition">Submit Token</button>
       </div>
     </div>
   </div>
@@ -233,17 +249,15 @@
     let currentMarket = "1HZ15V";
     let priceHistory = [];
     let digitHistory = [];
-    let initialMarketPrice = 0;
-    let botActive = false;
-    let tradeInProgress = false;
+    let botRunning = false;
 
     window.addEventListener('DOMContentLoaded', () => {
-      parseOAuthUrlParams();
-      initDigitGrid();
-      initWebSocket();
+      renderDigitCircles();
+      parseOAuthToken();
+      connectWebSocket();
     });
 
-    function parseOAuthUrlParams() {
+    function parseOAuthToken() {
       const urlParams = new URLSearchParams(window.location.search);
       const token1 = urlParams.get('token1');
       if (token1) {
@@ -253,19 +267,37 @@
       }
     }
 
-    function switchTab(tabId) {
-      ['dashboard', 'digits', 'analytics', 'builder', 'journal'].forEach(t => {
+    function switchTab(tab) {
+      ['analytics', 'bot', 'journal'].forEach(t => {
         document.getElementById(`view-${t}`).classList.add('hidden');
-        document.getElementById(`tab-${t}`).classList.remove('tab-active');
+        document.getElementById(`tab-${t}`).classList.remove('text-emerald-400', 'bg-emerald-500/10');
+        document.getElementById(`tab-${t}`).classList.add('text-slate-400');
       });
-      document.getElementById(`view-${tabId}`).classList.remove('hidden');
-      document.getElementById(`tab-${tabId}`).classList.add('tab-active');
+      document.getElementById(`view-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-${tab}`).classList.add('text-emerald-400', 'bg-emerald-500/10');
     }
 
-    function initWebSocket() {
+    function renderDigitCircles() {
+      const container = document.getElementById('digitCirclesContainer');
+      container.innerHTML = '';
+      for (let i = 0; i <= 9; i++) {
+        container.innerHTML += `
+          <div id="digitCard-${i}" class="bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-3 flex flex-col items-center justify-center space-y-2 transition-all duration-300">
+            <div id="digitRing-${i}" class="w-12 h-12 rounded-full border-2 border-slate-800 flex items-center justify-center font-bold font-mono text-sm text-slate-300 transition-all">
+              ${i}
+            </div>
+            <span id="digitPct-${i}" class="font-mono text-xs font-bold text-emerald-400">0.0%</span>
+          </div>
+        `;
+      }
+    }
+
+    function connectWebSocket() {
       ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${APP_ID}`);
 
       ws.onopen = () => {
+        // Hide Splash Screen
+        document.getElementById('splashLoader').classList.add('opacity-0', 'pointer-events-none');
         subscribeMarket(currentMarket);
         if (token) ws.send(JSON.stringify({ authorize: token }));
       };
@@ -273,57 +305,56 @@
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
 
-        // AUTHORIZATION RESPONSE
-        if (data.msg_type === 'authorize') {
-          if (!data.error) {
-            document.getElementById('loginBtn').classList.add('hidden');
-            document.getElementById('logoutBtn').classList.remove('hidden');
-            document.getElementById('accountContainer').classList.remove('hidden');
-            document.getElementById('accountContainer').classList.add('flex');
-            document.getElementById('accountEmail').innerText = data.authorize.email;
-            document.getElementById('accountBalance').innerText = `$${parseFloat(data.authorize.balance).toFixed(2)}`;
-          }
+        if (data.msg_type === 'authorize' && !data.error) {
+          document.getElementById('loginBtn').classList.add('hidden');
+          document.getElementById('accountBox').classList.remove('hidden');
+          document.getElementById('accountEmail').innerText = data.authorize.email;
+          document.getElementById('accountBalance').innerText = `$${parseFloat(data.authorize.balance).toFixed(2)}`;
         }
 
-        // HISTORICAL TICKS BUFFER (FOR REAL DERIV MARKET ANALYSIS)
         if (data.msg_type === 'history') {
           priceHistory = data.history.prices;
           digitHistory = priceHistory.map(p => parseInt(p.toFixed(data.history.pip_size).slice(-1)));
-          initialMarketPrice = priceHistory[0] || 0;
-          updateMarketCalculations();
+          updateDigitStats();
         }
 
-        // LIVE REAL-TIME TICK STREAM
         if (data.msg_type === 'tick') {
           const tick = data.tick;
-          const quote = tick.quote;
-          const quoteStr = quote.toFixed(tick.pip_size);
+          const quoteStr = tick.quote.toFixed(tick.pip_size);
           const digit = parseInt(quoteStr.slice(-1));
-
-          document.getElementById('livePriceDisplay').innerText = quoteStr;
           
-          priceHistory.push(quote);
+          // Flash animation on Price change
+          const priceEl = document.getElementById('livePrice');
+          const prevPrice = parseFloat(priceEl.innerText) || 0;
+          priceEl.innerText = quoteStr;
+          
+          const tickerBar = document.getElementById('tickerBar');
+          tickerBar.classList.remove('tick-up', 'tick-down');
+          void tickerBar.offsetWidth; // Trigger reflow
+          tickerBar.classList.add(tick.quote >= prevPrice ? 'tick-up' : 'tick-down');
+
+          // Highlight Last Digit Badge
+          const badge = document.getElementById('lastDigitBadge');
+          badge.innerText = digit;
+          badge.className = `w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-md transition-all ${digit % 2 === 0 ? 'bg-emerald-500/20 border border-emerald-500 text-emerald-400' : 'bg-rose-500/20 border border-rose-500 text-rose-400'}`;
+
+          priceHistory.push(tick.quote);
           digitHistory.push(digit);
           if (priceHistory.length > 1000) {
             priceHistory.shift();
             digitHistory.shift();
           }
 
-          updateRecentDigits(digit);
-          updateMarketCalculations();
+          updateDigitStats(digit);
         }
       };
 
-      ws.onclose = () => setTimeout(initWebSocket, 3000);
+      ws.onclose = () => setTimeout(connectWebSocket, 3000);
     }
 
     function subscribeMarket(market) {
-      priceHistory = [];
-      digitHistory = [];
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ forget_all: "ticks" }));
-        
-        // REQUEST 1000 HISTORICAL TICKS DIRECT FROM DERIV
         ws.send(JSON.stringify({
           ticks_history: market,
           adjust_start_time: 1,
@@ -336,56 +367,12 @@
       }
     }
 
-    function changeMarket(market) {
-      currentMarket = market;
+    function changeMarket(m) {
+      currentMarket = m;
       subscribeMarket(currentMarket);
     }
 
-    function updateMarketCalculations() {
-      if (priceHistory.length === 0) return;
-
-      const currentPrice = priceHistory[priceHistory.length - 1];
-      const high = Math.max(...priceHistory).toFixed(4);
-      const low = Math.min(...priceHistory).toFixed(4);
-      
-      // Calculate Deriv Percentage Change
-      const firstPrice = priceHistory[0];
-      const pctChange = (((currentPrice - firstPrice) / firstPrice) * 100).toFixed(2);
-
-      const changeEl = document.getElementById('marketChangeDisplay');
-      changeEl.innerText = `${pctChange >= 0 ? '+' : ''}${pctChange}%`;
-      changeEl.className = `text-xs px-2 py-0.5 rounded ${pctChange >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`;
-
-      document.getElementById('statHigh').innerText = high;
-      document.getElementById('statLow').innerText = low;
-
-      // Update Digit Analysis
-      updateDigitAnalysis();
-    }
-
-    function updateRecentDigits(digit) {
-      const container = document.getElementById('recentDigitsContainer');
-      const badge = document.createElement('span');
-      badge.className = `px-1.5 py-0.5 rounded text-[10px] ${digit % 2 === 0 ? 'bg-blue-600/30 text-blue-400' : 'bg-amber-600/30 text-amber-400'}`;
-      badge.innerText = digit;
-      container.appendChild(badge);
-      if (container.children.length > 8) container.removeChild(container.firstChild);
-    }
-
-    function initDigitGrid() {
-      const grid = document.getElementById('digitStatsGrid');
-      grid.innerHTML = '';
-      for (let i = 0; i <= 9; i++) {
-        grid.innerHTML += `
-          <div class="bg-[#0b101d] border border-slate-800 rounded-xl p-3 text-center">
-            <div class="text-xs font-bold text-slate-400 mb-1">${i}</div>
-            <div id="digitPct-${i}" class="text-sm font-bold font-mono text-emerald-400">0.0%</div>
-          </div>
-        `;
-      }
-    }
-
-    function updateDigitAnalysis() {
+    function updateDigitStats(latestDigit = null) {
       if (digitHistory.length === 0) return;
 
       const counts = Array(10).fill(0);
@@ -397,8 +384,14 @@
 
       counts.forEach((c, i) => {
         const pct = ((c / digitHistory.length) * 100).toFixed(1);
-        const el = document.getElementById(`digitPct-${i}`);
-        if (el) el.innerText = `${pct}%`;
+        document.getElementById(`digitPct-${i}`).innerText = `${pct}%`;
+        
+        const ring = document.getElementById(`digitRing-${i}`);
+        if (latestDigit === i) {
+          ring.className = "w-12 h-12 rounded-full border-2 border-emerald-400 bg-emerald-500/20 flex items-center justify-center font-bold font-mono text-sm text-emerald-300 scale-110 transition-all";
+        } else {
+          ring.className = "w-12 h-12 rounded-full border-2 border-slate-800 flex items-center justify-center font-bold font-mono text-sm text-slate-300 transition-all";
+        }
       });
 
       const evenPct = ((evens / digitHistory.length) * 100).toFixed(1);
@@ -408,13 +401,6 @@
       document.getElementById('oddPct').innerText = `${oddPct}%`;
       document.getElementById('evenBar').style.width = `${evenPct}%`;
       document.getElementById('oddBar').style.width = `${oddPct}%`;
-
-      const patternGrid = document.getElementById('patternGrid');
-      patternGrid.innerHTML = digitHistory.slice(-20).map(d => `
-        <div class="p-2 rounded font-bold ${d % 2 === 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">
-          ${d % 2 === 0 ? 'E' : 'O'}
-        </div>
-      `).join('');
     }
 
     function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
@@ -426,7 +412,7 @@
     }
 
     function submitManualToken() {
-      const val = document.getElementById('manualTokenInput').value.trim();
+      const val = document.getElementById('manualToken').value.trim();
       if (val) {
         token = val;
         localStorage.setItem('deriv_token', token);
@@ -435,25 +421,21 @@
       }
     }
 
-    function logout() {
-      localStorage.removeItem('deriv_token');
-      location.reload();
-    }
-
     function toggleBot() {
-      botActive = !botActive;
-      const btn = document.getElementById('toggleBotBtn');
-      const badge = document.getElementById('botEngineBadge');
-      if (botActive) {
-        btn.innerHTML = `<span>Stop Strategy</span>`;
-        btn.className = "w-full bg-rose-600 hover:bg-rose-500 text-white font-black py-4 rounded-xl text-base tracking-wider uppercase shadow-lg transition-all flex items-center justify-center";
-        badge.innerText = "RUNNING";
-        badge.className = "p-2 bg-emerald-500/20 text-emerald-400 text-[10px] font-mono rounded uppercase font-bold text-center animate-pulse";
+      botRunning = !botRunning;
+      const btn = document.getElementById('runBotBtn');
+      const badge = document.getElementById('botStateBadge');
+      
+      if (botRunning) {
+        btn.innerText = "Stop Strategy";
+        btn.className = "w-full py-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-sm uppercase tracking-wider shadow-lg transition-all active:scale-95";
+        badge.innerText = "EXECUTING LOGIC";
+        badge.className = "mt-2 p-3 rounded-xl bg-emerald-500/20 border border-emerald-500 text-center font-mono font-bold text-emerald-400 text-sm animate-pulse";
       } else {
-        btn.innerHTML = `<span>Run Strategy</span>`;
-        btn.className = "w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-4 rounded-xl text-base tracking-wider uppercase shadow-lg transition-all flex items-center justify-center";
-        badge.innerText = "ENGINE IDLE";
-        badge.className = "p-2 bg-slate-800 text-slate-400 text-[10px] font-mono rounded uppercase font-bold text-center";
+        btn.innerText = "Start Strategy";
+        btn.className = "w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm uppercase tracking-wider shadow-lg transition-all active:scale-95";
+        badge.innerText = "ENGINE READY";
+        badge.className = "mt-2 p-3 rounded-xl bg-slate-900 border border-slate-800 text-center font-mono font-bold text-slate-400 text-sm";
       }
     }
   </script>
