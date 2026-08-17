@@ -168,10 +168,16 @@
       }
     });
 
-  // Redirect user to official Deriv OAuth page
+// Redirect user to official Deriv OAuth page
     function loginWithDeriv() {
-      const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
-      const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=${APP_ID}&l=EN&scope=read+trade&redirect_uri=${encodeURIComponent(cleanUrl)}`;
+      // Force exact match with Deriv Portal URL including trailing slash
+      let redirectUri = window.location.origin + window.location.pathname;
+      if (!redirectUri.endsWith('/')) {
+        redirectUri += '/';
+      }
+      
+      // Standard Deriv OAuth link
+      const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=${APP_ID}&l=EN`;
       window.location.href = oauthUrl;
     }
     
