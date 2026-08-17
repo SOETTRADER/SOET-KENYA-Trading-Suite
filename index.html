@@ -3,11 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SOET KENYA | Automated Deriv Suite</title>
-  <!-- Tailwind CSS for modern dark HUD styling -->
+  <title>SOET KENYA | Advanced Trading Suite</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Custom Scrollbar for Terminal Logs */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -19,16 +17,24 @@
   <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
     <div class="flex items-center space-x-3">
       <div id="statusDot" class="w-3 h-3 rounded-full bg-rose-500"></div>
-      <h1 class="text-xl font-bold tracking-wider text-emerald-400">SOET KENYA <span class="text-slate-400 text-sm font-normal">| Deriv Suite</span></h1>
+      <h1 class="text-xl font-bold tracking-wider text-emerald-400">SOET KENYA <span class="text-slate-400 text-sm font-normal">| Multi-Market Suite</span></h1>
     </div>
     
-    <!-- OAUTH LOGIN / ACCOUNT STATUS -->
-    <div id="authSection" class="flex items-center space-x-4">
-      <span id="accountInfo" class="text-xs text-slate-400 hidden">Not Logged In</span>
-      <button id="loginBtn" onclick="loginWithDeriv()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2 px-4 rounded-lg transition cursor-pointer">
-        Connect Deriv OAuth
+    <!-- AUTH & CONNECTION CONTROL -->
+    <div id="authSection" class="flex items-center space-x-3">
+      <span id="accountInfo" class="text-xs text-slate-400 hidden">Not Connected</span>
+      
+      <!-- OAUTH BUTTON -->
+      <button id="loginBtn" onclick="loginWithDeriv()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2 px-3 rounded-lg transition">
+        Deriv OAuth
       </button>
-      <button id="logoutBtn" onclick="logout()" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs py-2 px-4 rounded-lg transition hidden cursor-pointer">
+
+      <!-- MANUAL TOKEN INPUT FALLBACK -->
+      <button onclick="promptManualToken()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-semibold text-xs py-2 px-3 rounded-lg transition">
+        Enter Token
+      </button>
+
+      <button id="logoutBtn" onclick="logout()" class="bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs py-2 px-3 rounded-lg transition hidden">
         Disconnect
       </button>
     </div>
@@ -37,36 +43,45 @@
   <!-- MAIN HUD CONTENT -->
   <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto w-full">
 
-    <!-- LEFT & CENTER: DIGIT STATS ENGINE -->
+    <!-- LEFT & CENTER: DIGIT STATS & MARKET SELECTOR -->
     <div class="lg:col-span-2 flex flex-col gap-6">
       
-      <!-- DIGIT PERCENTAGE VISUALIZER -->
+      <!-- MARKET & DIGIT VISUALIZER -->
       <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
           <div>
-            <h2 class="text-lg font-semibold text-slate-200">Real-Time Digit Frequency</h2>
-            <p class="text-xs text-slate-400">Live 0–9 statistical analysis on Volatility 100 Index</p>
+            <h2 class="text-lg font-semibold text-slate-200">Real-Time Statistics</h2>
+            <p class="text-xs text-slate-400">Digit distribution & tick analysis</p>
           </div>
-          <!-- TICK WINDOW SELECTOR -->
-          <select id="tickWindow" onchange="changeTickWindow(this.value)" class="bg-slate-950 border border-slate-700 text-xs text-slate-300 rounded-lg px-3 py-2 outline-none">
-            <option value="50">50 Ticks</option>
-            <option value="100" selected>100 Ticks</option>
-            <option value="500">500 Ticks</option>
-            <option value="1000">1000 Ticks</option>
-          </select>
+
+          <!-- MARKET & TICK CONTROLS -->
+          <div class="flex space-x-3">
+            <select id="marketSelect" onchange="changeMarket(this.value)" class="bg-slate-950 border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-2 outline-none">
+              <option value="R_100" selected>Volatility 100 Index</option>
+              <option value="R_75">Volatility 75 Index</option>
+              <option value="R_50">Volatility 50 Index</option>
+              <option value="R_25">Volatility 25 Index</option>
+              <option value="R_10">Volatility 10 Index</option>
+              <option value="1HZ100V">Volatility 100 (1s) Index</option>
+            </select>
+
+            <select id="tickWindow" onchange="changeTickWindow(this.value)" class="bg-slate-950 border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-2 outline-none">
+              <option value="50">50 Ticks</option>
+              <option value="100" selected>100 Ticks</option>
+              <option value="500">500 Ticks</option>
+            </select>
+          </div>
         </div>
 
         <!-- 0-9 PERCENTAGE BARS -->
-        <div id="digitGrid" class="grid grid-cols-10 gap-2 h-48 items-end border-b border-slate-800 pb-4">
-          <!-- Dynamically populated by JS -->
-        </div>
+        <div id="digitGrid" class="grid grid-cols-10 gap-2 h-48 items-end border-b border-slate-800 pb-4"></div>
       </div>
 
       <!-- SYSTEM LOG TERMINAL -->
       <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex-1 flex flex-col">
         <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Live System Log</h3>
         <div id="consoleLog" class="bg-slate-950 rounded-lg p-3 font-mono text-xs text-emerald-400 h-48 overflow-y-auto space-y-1">
-          <div>[SYSTEM] Ready for OAuth Connection.</div>
+          <div>[SYSTEM] SOET KENYA Suite Initialized. Choose OAuth or Token input to start.</div>
         </div>
       </div>
     </div>
@@ -75,7 +90,7 @@
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between">
       <div>
         <h2 class="text-lg font-semibold text-slate-200 mb-1">Bot Controls</h2>
-        <p class="text-xs text-slate-400 mb-6">Synchronized automated trade triggers</p>
+        <p class="text-xs text-slate-400 mb-6">Automated execution settings</p>
 
         <!-- STRATEGY SELECTOR -->
         <div class="space-y-4">
@@ -87,7 +102,7 @@
             </select>
           </div>
 
-          <!-- TARGET DIGIT / THRESHOLD INPUTS -->
+          <!-- TARGET DIGIT & THRESHOLD -->
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs text-slate-400 mb-1">Target Digit</label>
@@ -123,39 +138,33 @@
 
   </main>
 
-  <!-- WEBSOCKET & OAUTH SCRIPT -->
+  <!-- WEBSOCKET & LOGIC SCRIPT -->
   <script>
-    // Configuration
-    const APP_ID = "348Mnoh1ko1D10tYBCueg"; // Your exact registered Deriv App ID
+    const APP_ID = "348Mnoh1ko1D10tYBCueg";
     let ws;
     let token = null;
+    let currentMarket = "R_100";
     let digitHistory = [];
     let tickWindow = 100;
     let botActive = false;
     let tradeInProgress = false;
 
-    // Logging Utility
     function log(msg) {
       const consoleEl = document.getElementById('consoleLog');
       const time = new Date().toLocaleTimeString();
       consoleEl.innerHTML = `<div class="leading-relaxed"><span class="text-slate-500">[${time}]</span> ${msg}</div>` + consoleEl.innerHTML;
     }
 
-    // Initialize Page & Handle OAuth Redirect Tokens
     window.addEventListener('DOMContentLoaded', () => {
       renderDigitGrid();
       
-      // Parse token from URL parameters after OAuth redirect
+      // Parse token from URL if OAuth returned
       const urlParams = new URLSearchParams(window.location.search);
       const urlToken = urlParams.get('token1');
-      const urlAccount = urlParams.get('acct1');
-
+      
       if (urlToken) {
         token = urlToken;
         localStorage.setItem('deriv_token', token);
-        if (urlAccount) localStorage.setItem('deriv_account', urlAccount);
-        
-        // Clean URL params without reloading page
         window.history.replaceState({}, document.title, window.location.pathname);
       } else {
         token = localStorage.getItem('deriv_token');
@@ -163,37 +172,36 @@
 
       if (token) {
         connectWebSocket();
-      } else {
-        log("No active token found. Please click 'Connect Deriv OAuth'.");
       }
     });
 
-// Redirect user to official Deriv OAuth page
     function loginWithDeriv() {
-      // Force exact match with Deriv Portal URL including trailing slash
-      let redirectUri = window.location.origin + window.location.pathname;
-      if (!redirectUri.endsWith('/')) {
-        redirectUri += '/';
-      }
-      
-      // Standard Deriv OAuth link
-      const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=${APP_ID}&l=EN`;
+      const redirectUri = window.location.origin + window.location.pathname;
+      const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=${APP_ID}&l=EN&cb=${encodeURIComponent(redirectUri)}`;
       window.location.href = oauthUrl;
     }
-    
+
+    function promptManualToken() {
+      const input = prompt("Enter your Deriv API Token (Read + Trade permissions):");
+      if (input && input.trim() !== "") {
+        token = input.trim();
+        localStorage.setItem('deriv_token', token);
+        if (ws) ws.close();
+        connectWebSocket();
+      }
+    }
+
     function logout() {
       localStorage.removeItem('deriv_token');
-      localStorage.removeItem('deriv_account');
       location.reload();
     }
 
-    // Connect WebSocket and Authorize
     function connectWebSocket() {
-      log("Connecting to Deriv WebSocket...");
+      log("Connecting to WebSocket...");
       ws = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${APP_ID}`);
 
       ws.onopen = function() {
-        log("WebSocket connected. Authorizing session...");
+        log("WebSocket connected. Authenticating...");
         ws.send(JSON.stringify({ authorize: token }));
       };
 
@@ -202,25 +210,21 @@
 
         if (data.msg_type === 'authorize') {
           if (data.error) {
-            log(`Auth Error: ${data.error.message}`);
+            log(`Auth Failed: ${data.error.message}`);
             logout();
           } else {
-            log(`Authorized successfully! Account: ${data.authorize.email} (${data.authorize.loginid})`);
-            
-            // Update Top Header UI
+            log(`Connected as: ${data.authorize.email}`);
             document.getElementById('statusDot').className = "w-3 h-3 rounded-full bg-emerald-500 animate-pulse";
             document.getElementById('loginBtn').classList.add('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
             document.getElementById('accountInfo').classList.remove('hidden');
-            document.getElementById('accountInfo').innerText = `${data.authorize.email} | ${data.authorize.loginid}`;
+            document.getElementById('accountInfo').innerText = data.authorize.email;
             
-            // Enable Bot Toggle Button
             const botBtn = document.getElementById('toggleBotBtn');
             botBtn.disabled = false;
             botBtn.className = "w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition cursor-pointer";
 
-            // Subscribe to Live Ticks (Volatility 100 Index)
-            ws.send(JSON.stringify({ ticks: "R_100" }));
+            subscribeToMarket(currentMarket);
           }
         }
 
@@ -234,12 +238,22 @@
           updateStatsAndEvaluate();
         }
       };
-
-      ws.onerror = function(err) { log(`WS Error: Connection error.`); };
-      ws.onclose = function() { log("WebSocket disconnected."); };
     }
 
-    // Render 0-9 Digit Heatmap Bars
+    function subscribeToMarket(market) {
+      digitHistory = [];
+      log(`Subscribing to ${market}...`);
+      ws.send(JSON.stringify({ forget_all: "ticks" }));
+      ws.send(JSON.stringify({ ticks: market }));
+    }
+
+    function changeMarket(market) {
+      currentMarket = market;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        subscribeToMarket(currentMarket);
+      }
+    }
+
     function renderDigitGrid() {
       const grid = document.getElementById('digitGrid');
       grid.innerHTML = '';
@@ -256,93 +270,33 @@
       }
     }
 
-    // Update Percentage Stats on Every Tick
     function updateStatsAndEvaluate() {
       const windowData = digitHistory.slice(-tickWindow);
       if (windowData.length === 0) return;
 
       const counts = Array(10).fill(0);
       windowData.forEach(d => counts[d]++);
-
       const pcts = counts.map(c => ((c / windowData.length) * 100));
 
-      // Update UI Bars
       pcts.forEach((pct, digit) => {
         const bar = document.getElementById(`bar-${digit}`);
         const pctText = document.getElementById(`pct-${digit}`);
         if (bar && pctText) {
           bar.style.height = `${pct}%`;
           pctText.innerText = `${pct.toFixed(1)}%`;
-
-          // Dynamic Colors
           if (pct >= 12.0) bar.className = "bg-emerald-400 w-full transition-all duration-300";
           else if (pct <= 8.0) bar.className = "bg-rose-500 w-full transition-all duration-300";
           else bar.className = "bg-blue-500 w-full transition-all duration-300";
         }
       });
-
-      // Evaluate Bot Signals
-      if (botActive && !tradeInProgress) {
-        const targetDigit = parseInt(document.getElementById('targetDigit').value);
-        const threshold = parseFloat(document.getElementById('triggerThreshold').value);
-
-        if (pcts[targetDigit] >= threshold) {
-          executeTrade(targetDigit);
-        }
-      }
-    }
-
-    // Bot Signal Trigger Execution
-    function executeTrade(digit) {
-      tradeInProgress = true;
-      const stake = parseFloat(document.getElementById('stakeAmount').value);
-      log(`SIGNAL HIT! Digit ${digit} frequency reached threshold. Requesting contract proposal...`);
-
-      // 1. Get Proposal
-      ws.send(JSON.stringify({
-        proposal: 1,
-        amount: stake,
-        basis: "stake",
-        contract_type: "DIGITDIFF",
-        currency: "USD",
-        duration: 1,
-        duration_unit: "t",
-        symbol: "R_100",
-        barrier: digit.toString()
-      }));
-
-      // Handler for proposal buy sequence
-      const handleProposal = function(e) {
-        const res = JSON.parse(e.data);
-        if (res.msg_type === 'proposal') {
-          ws.removeEventListener('message', handleProposal);
-          if (res.error) {
-            log(`Proposal Error: ${res.error.message}`);
-            tradeInProgress = false;
-          } else {
-            // 2. Execute Buy
-            ws.send(JSON.stringify({ buy: res.proposal.id, price: stake }));
-            log(`Executing order for $${stake}...`);
-            setTimeout(() => { tradeInProgress = false; }, 2500);
-          }
-        }
-      };
-
-      ws.addEventListener('message', handleProposal);
     }
 
     function toggleBot() {
       botActive = !botActive;
       const btn = document.getElementById('toggleBotBtn');
-      if (botActive) {
-        btn.innerText = "Stop Auto Bot";
-        btn.className = "w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-lg transition cursor-pointer";
-        log("Automated bot started.");
-      } else {
-        btn.innerText = "Start Auto Bot";
-        btn.className = "w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition cursor-pointer";
-        log("Automated bot stopped.");
-      }
+      btn.innerText = botActive ? "Stop Auto Bot" : "Start Auto Bot";
+      btn.className = botActive ? "w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-lg transition" : "w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition";
+      log(botActive ? "Bot started." : "Bot stopped.");
     }
 
     function changeTickWindow(val) {
